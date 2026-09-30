@@ -20,17 +20,9 @@ function CardContent({ task, teamMembers, stages, onEdit, onMove, onAssign, disa
   const completed = task.subtasks.filter(s => s.completed).length;
   const total = task.subtasks.length;
   return <>
-    <div className="card-top"><span className={'priority ' + task.priority}><span />{PRIORITIES[task.priority]}</span>{handle}</div>
-    <button className="card-open" onClick={() => onEdit(task)} disabled={disabled || overlay}><h3>{task.title}</h3>{task.description && <p>{task.description}</p>}</button>
-    {task.tags.length > 0 && <div className="card-tags">{task.tags.slice(0, 3).map(t => <span key={t}>{t}</span>)}{task.tags.length > 3 && <span>+{task.tags.length - 3}</span>}</div>}
-    {total > 0 && <div className={'card-progress' + (completed === total ? ' complete' : '')}>
-      <div className="card-progress-label"><span><CheckSquare size={12} />Zadania cząstkowe</span><span>{completed}/{total}</span></div>
-      <progress value={completed} max={total} aria-label={'Postęp zadania: ' + task.title} aria-valuetext={completed + ' z ' + total + ' podzadań ukończonych'} />
-    </div>}
-    <div className="card-footer">
-      <span className={due.isOverdue ? 'card-date overdue' : 'card-date'} title={due.badgeText}><CalendarDays size={13} />{task.dueDate ? due.formatted : 'Bez terminu'}</span>
+    <div className="card-top"><span className={'priority ' + task.priority}><span />{PRIORITIES[task.priority]}</span>
       <div className="card-assignee-pill" title={person ? `Osoba: ${person.name} (kliknij, aby zmienić)` : 'Nieprzypisane (kliknij, aby przypisać)'}>
-        <span className="avatar small" style={person ? { background: person.color + '18', color: person.color } : undefined}>
+        <span className="avatar small" style={person ? { '--person-color': person.color } as React.CSSProperties : undefined}>
           {person ? person.name.split(' ').map(x => x[0]).slice(0, 2).join('') : <UserRound size={11} />}
         </span>
         <span className="card-assignee-name">{person ? person.name : 'Przypisz'}</span>
@@ -51,8 +43,19 @@ function CardContent({ task, teamMembers, stages, onEdit, onMove, onAssign, disa
           </select>
         )}
       </div>
+      {handle}
     </div>
-    {!overlay && <select className="card-stage" aria-label={'Przenieś: ' + task.title} value={task.status} disabled={disabled} onChange={e => onMove(task.id, e.target.value)}>{stages.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</select>}
+    <button className="card-open" onClick={() => onEdit(task)} disabled={disabled || overlay}><h3>{task.title}</h3>{task.description && <p>{task.description}</p>}</button>
+    {task.tags.length > 0 && <div className="card-tags">{task.tags.slice(0, 3).map(t => <span key={t}>{t}</span>)}{task.tags.length > 3 && <span>+{task.tags.length - 3}</span>}</div>}
+    {total > 0 && <div className={'card-progress' + (completed === total ? ' complete' : '')}>
+      <CheckSquare size={12} aria-hidden="true" />
+      <progress value={completed} max={total} aria-label={'Postęp zadania: ' + task.title} aria-valuetext={completed + ' z ' + total + ' podzadań ukończonych'} />
+      <span>{completed}/{total}</span>
+    </div>}
+    <div className="card-footer">
+      <span className={due.isOverdue ? 'card-date overdue' : 'card-date'} title={due.badgeText}><CalendarDays size={12} />{task.dueDate ? due.formatted : 'Bez terminu'}</span>
+      {!overlay && <select className="card-stage" aria-label={'Przenieś: ' + task.title} value={task.status} disabled={disabled} onChange={e => onMove(task.id, e.target.value)}>{stages.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</select>}
+    </div>
   </>;
 }
 export function TaskCard(props: Props) {

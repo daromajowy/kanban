@@ -43,10 +43,16 @@ Changes use revision compare-and-swap. If another person saves first, the stale 
 
 Custom stages are inserted before Zrobione. The built-in `done` stage is the completion stage used by deadline calculations. Drag by the grip with a mouse or long press on touch; space, arrows and space support keyboard movement. Every card also has a stage selector. Card ordering is stored in the task array and preserved when filters are active.
 
+Stages can also be dragged by their heading grip, including Zrobione. Moving a stage changes only its position, never its task statuses. The heading menu offers eight colors and left/right buttons as an alternative to dragging. Stage order and colors are saved through the same revision-protected board write as tasks.
+
+The header's sun/moon buttons select a white or dark gray appearance. This is a per-browser preference (`kanban-theme` in local storage), independent of shared board data. Compact cards retain assignment, stage selection and checklist progress; opening a card shows its full title and description.
+
 CSV, Markdown and full JSON exports include custom stages. Export is explicit and local; there is no simulated GitHub sync.
 
 ## Deployment
 Enable GitHub Pages with GitHub Actions as its source. The deployment workflow uses the same checked source and public config; it does not apply migrations or create accounts. Merge the reviewed change only after the backend and first account are ready. The previous site remains vulnerable until the new frontend is actually deployed.
+
+Keep `package-lock.json` committed: both the dependency cache and `npm ci` require it. Use Node.js 24 for the same toolchain as CI.
 
 Rollback the frontend by redeploying its previous commit only with awareness that the old auth was client-side. The new database does not expose old credentials and is independent of the old local storage; preserve it when troubleshooting.
 

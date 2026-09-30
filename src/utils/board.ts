@@ -18,7 +18,7 @@ export function assertDraftCurrent(data: BoardData, original: Task | null, id?: 
   }
 }
 
-// Stable IDs preserve historical tasks. "done" remains the terminal stage.
+// Stable IDs preserve historical tasks. "done" means completed in any position.
 export function addStage(data: BoardData, title: string, color: string, id: string): BoardData {
   const name = title.trim();
   if (!name || name.length > 48 || data.stages.length >= 20 || data.stages.some(s => s.title.toLocaleLowerCase('pl') === name.toLocaleLowerCase('pl')) || data.stages.some(s => s.id === id)) {
@@ -28,6 +28,22 @@ export function addStage(data: BoardData, title: string, color: string, id: stri
   const stages = [...data.stages];
   stages.splice(Math.max(0, stages.findIndex(s => s.id === 'done')), 0, stage);
   return { ...data, stages };
+}
+
+export function moveStage(data: BoardData, stageId: string, targetId: string): BoardData {
+  const from = data.stages.findIndex(s => s.id === stageId);
+  const to = data.stages.findIndex(s => s.id === targetId);
+  if (from < 0 || to < 0 || from === to) return data;
+  const stages = [...data.stages];
+  const [stage] = stages.splice(from, 1);
+  stages.splice(to, 0, stage);
+  return { ...data, stages };
+}
+
+export function setStageColor(data: BoardData, stageId: string, color: string): BoardData {
+  if (!/^#[\da-f]{6}$/i.test(color)) throw new Error('Wybierz prawidłowy kolor etapu.');
+  if (!data.stages.some(s => s.id === stageId)) return data;
+  return { ...data, stages: data.stages.map(s => s.id === stageId ? { ...s, color } : s) };
 }
 
 // Insertion before a visible card preserves the order of filtered-out cards.

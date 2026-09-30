@@ -5,6 +5,8 @@ import { emptyBoard } from '../src/utils/board';
 import { RevisionConflictError } from '../src/utils/supabase';
 import type { BoardData } from '../src/types/kanban';
 import '../src/index.css';
+import { applyTheme, readTheme } from '../src/utils/theme';
+applyTheme(readTheme());
 const data: BoardData = {
   ...emptyBoard(),
   members: [{ id: 'demo-1', name: 'Jan', email: '', role: 'Projekt', color: '#0d9488', status: 'active' }, { id: 'demo-2', name: 'Darek', email: '', role: 'Realizacja', color: '#6366f1', status: 'active' }],
