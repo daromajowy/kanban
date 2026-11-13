@@ -111,11 +111,77 @@ class TeamSecurityTest extends TestCase
         $this->authenticated($user)->getJson('/api/boards/'.self::BOARD.'/kanban')->assertNotFound();
     }
 
-    public function test_inactive_and_expired_sessions_are_rejected(): void
+    public function test_session_expires_after_a_day_without_user_activity(): void
     {
         $user = $this->member();
-        $this->authenticated($user)->withSession(['seen_at' => now()->subMinutes(31)->timestamp])
+        $this->authenticated($user)->withSession(['seen_at' => now()->subDay()->subSecond()->timestamp])
             ->getJson('/api/boards/'.self::BOARD.'/kanban')->assertUnauthorized();
+    }
+
+    public function test_authenticated_session_survives_an_overnight_break(): void
+    {
+        $user = $this->member();
+        $this->authenticated($user)->withSession(['password_at' => now()->subDays(6)->timestamp,
+            'seen_at' => now()->subHours(18)->timestamp])
+            ->getJson('/api/boards/'.self::BOARD.'/kanban')->assertOk()->assertJsonPath('revision', 7);
+    }
+
+    public function test_session_expires_a_week_after_login_even_with_recent_activity(): void
+    {
+        $this->authenticated($this->member())->withSession(['password_at' => now()->subDays(7)->subSecond()->timestamp])
+            ->getJson('/api/boards/'.self::BOARD.'/kanban')->assertUnauthorized();
+    }
+
+    public function test_pending_mfa_still_expires_after_ten_minutes(): void
+    {
+        $this->authenticated($this->member(), false)->withSession(['password_at' => now()->subMinutes(10)->subSecond()->timestamp])
+            ->getJson('/api/boards/'.self::BOARD.'/kanban')->assertUnauthorized();
+    }
+
+    public function test_background_polling_does_not_extend_idle_time_but_user_activity_does(): void
+    {
+        $this->freezeTime();
+        $lastSeen = now()->subHours(18)->timestamp;
+        $this->authenticated($this->member())->withSession(['seen_at' => $lastSeen])
+            ->getJson('/api/session')->assertOk()->assertSessionHas('seen_at', $lastSeen);
+        $this->getJson('/api/boards/'.self::BOARD.'/kanban')->assertOk()->assertSessionHas('seen_at', $lastSeen);
+        $this->withHeader('X-User-Active', '1')->getJson('/api/boards/'.self::BOARD.'/kanban')
+            ->assertOk()->assertSessionHas('seen_at', now()->timestamp);
+    }
+
+    public function test_session_cookie_is_persistent_and_retains_browser_security_flags(): void
+    {
+        $this->freezeTime();
+        config(['session.driver' => 'database', 'session.secure' => true]);
+        $response = $this->getJson('/api/session')->assertOk();
+        $cookie = $response->getCookie(config('session.cookie'), false);
+        $this->assertNotNull($cookie);
+        $this->assertSame(now()->addDay()->timestamp, $cookie->getExpiresTime());
+        $this->assertTrue($cookie->isSecure());
+        $this->assertTrue($cookie->isHttpOnly());
+        $this->assertSame('strict', $cookie->getSameSite());
+        $this->assertSame('/', $cookie->getPath());
+        $this->assertNull($cookie->getDomain());
+    }
+
+    public function test_database_session_storage_retains_an_overnight_session_and_expires_old_ones(): void
+    {
+        $this->freezeTime();
+        config(['session.driver' => 'database']);
+        $store = app('session')->driver();
+        $store->start();
+        $store->put('test_marker', 'synthetic-session-only');
+        $store->save();
+        $sessionId = $store->getId();
+        $this->travel(18)->hours();
+        $store->flush();
+        $store->start();
+        $this->assertSame($sessionId, $store->getId());
+        $this->assertSame('synthetic-session-only', $store->get('test_marker'));
+        $this->travel(7)->hours();
+        $store->flush();
+        $store->start();
+        $this->assertNull($store->get('test_marker'));
     }
 
     public function test_auth_version_change_revokes_existing_session(): void

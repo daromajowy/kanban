@@ -2,8 +2,8 @@
 
 return [
     'driver' => env('SESSION_DRIVER', 'database'),
-    'lifetime' => 30,
-    'expire_on_close' => true,
+    'lifetime' => 24 * 60,
+    'expire_on_close' => false,
     'encrypt' => true,
     'files' => storage_path('framework/sessions'),
     'connection' => env('SESSION_CONNECTION'),

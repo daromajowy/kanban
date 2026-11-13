@@ -10,7 +10,7 @@ There is no public registration. Board access is determined by the server's memb
 
 ## Security boundaries
 
-- HTTPS and HSTS; host-only Secure, HttpOnly, SameSite=Strict cookies; encrypted database sessions, with 30-minute inactivity and eight-hour absolute limits.
+- HTTPS and HSTS; host-only Secure, HttpOnly, SameSite=Strict cookies; encrypted database sessions, with 24-hour inactivity and seven-day absolute limits. Sessions survive closing the browser; explicit logout, password reset and account revocation still invalidate access.
 - CSRF and origin validation, server-side membership checks on every board/photo request, login and MFA throttling, single-use TOTP time steps and hashed recovery codes.
 - Application-level authenticated encryption for board documents, revisions, original photo files and MFA secrets. Passwords use bcrypt. The application key and database/mail credentials remain in the private server environment, outside source control and release archives.
 - Images are immutable, MIME/content checked and size limited, and require an authenticated, MFA-verified member to download. Public signed image URLs are not used. Photos removed from a card remain in encrypted storage to avoid losing originals.
